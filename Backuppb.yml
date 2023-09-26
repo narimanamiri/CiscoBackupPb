@@ -1,0 +1,25 @@
+- name: Backup Cisco switch configurations
+  hosts: switches
+  gather_facts: no
+  connection: network_cli
+  vars:
+    backup_path: "/root/backup_sw"
+
+  tasks:
+    - name: Retrieve switch hostname
+      ios_facts:
+        gather_subset: hardware
+      register: switch_facts
+
+    - name: Retrieve switch configurations
+      ios_command:
+        commands:
+          - show running-config
+      register: switch_config
+      ignore_errors: yes
+
+    - name: Save switch configurations to local files
+      copy:
+        content: "{{ switch_config.stdout[0] }}"
+        dest: "{{ backup_path }}/{{ switch_facts.ansible_facts.ansible_net_hostname }}.txt"
+      when: switch_config is success
